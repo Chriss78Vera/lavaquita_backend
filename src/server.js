@@ -43,4 +43,7 @@ io.on("connection", (socket) => {
 server.listen(config.port, () => {
   console.log(`La Vaquita API escuchando en http://localhost:${config.port}`);
   console.log(`Persistencia: ${hasSupabaseConfig ? "Supabase" : "memoria (desarrollo)"}`);
+if ((config.supabaseUrl || config.supabaseServiceRoleKey) && !hasSupabaseConfig) {
+  console.warn("Supabase requiere SUPABASE_SECRET_KEY (sb_secret_...) o la clave legacy service_role; se usará memoria local.");
+}
 });

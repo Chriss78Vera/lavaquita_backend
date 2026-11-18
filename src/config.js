@@ -14,7 +14,7 @@ export const config = {
     .filter(Boolean),
   roomTtlHours: numberFromEnv("ROOM_TTL_HOURS", 12),
   supabaseUrl: process.env.SUPABASE_URL,
-  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  supabaseServiceRoleKey: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
   ocrApiUrl: process.env.OCR_API_URL,
   ocrApiKey: process.env.OCR_API_KEY,
   ocrModel: process.env.OCR_MODEL,
@@ -22,5 +22,7 @@ export const config = {
 };
 
 export const hasSupabaseConfig = Boolean(
-  config.supabaseUrl && config.supabaseServiceRoleKey,
+  config.supabaseUrl?.match(/^https?:\/\/[^\s]+$/i)
+    && config.supabaseServiceRoleKey
+    && !config.supabaseServiceRoleKey.startsWith("sb_publishable_"),
 );

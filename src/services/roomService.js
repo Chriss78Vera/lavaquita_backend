@@ -39,7 +39,7 @@ export class RoomService {
       hostAvatar,
       hostTokenHash: hashToken(hostToken),
       amountCents: null,
-      currency: "COP",
+      currency: "USD",
       status: "waiting",
       expiresAt,
     });
@@ -101,11 +101,11 @@ export class RoomService {
     return room;
   }
 
-  async setBill(code, token, { amount, currency = "COP" }) {
+  async setBill(code, token, { amount }) {
     await this.assertHost(code, token);
     const room = await this.repository.updateRoom(code, {
       amountCents: toCents(amount),
-      currency,
+      currency: "USD",
       status: "ready",
     });
     this.invalidate(code);
@@ -115,6 +115,7 @@ export class RoomService {
   async split(code) {
     const room = await this.getRoom(code);
     if (!room.amountCents) throw new ApiError(409, "Primero confirma el total de la cuenta");
+    if (room.participants.length <= 2) throw new ApiError(409, "Para dividir la cuenta necesitas al menos 3 jugadores");
     const shares = splitCents(room.amountCents, room.participants);
     return { total: room.amount, currency: room.currency, shares };
   }

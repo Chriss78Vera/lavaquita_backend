@@ -47,7 +47,15 @@ OCR_API_KEY=tu_clave
 OCR_MODEL=tu_modelo_con_vision
 ```
 
-La imagen se procesa en memoria y no se guarda. Si la IA aún no está configurada, el endpoint devuelve `503` y la app debe mantener disponible el monto manual.
+La imagen se procesa en memoria y no se guarda. Una opción recomendada es DeepSeek Vision, sin instalar una IA local:
+
+```env
+OCR_API_URL=https://api.deepseek.com/chat/completions
+OCR_API_KEY=tu_clave_deepseek
+OCR_MODEL=deepseek-flash
+```
+
+Si la IA aún no está configurada, el endpoint devuelve `503` y la app debe mantener disponible el monto manual. No pongas la API key en la aplicación MAUI ni la subas a Git; debe permanecer únicamente en el backend.
 
 Si tu IA usa otro formato, solo hay que adaptar [`src/services/ocrService.js`](src/services/ocrService.js); el contrato hacia MAUI no cambia.
 
@@ -82,7 +90,7 @@ Guarda `hostToken` solamente en el dispositivo del anfitrión. Para confirmar un
 curl -X PATCH http://localhost:3000/api/rooms/ABCD-12/bill \
   -H "Content-Type: application/json" \
   -H "x-host-token: TOKEN_RECIBIDO" \
-  -d '{"amount":84600,"currency":"COP"}'
+  -d '{"amount":84.60,"currency":"USD"}'
 ```
 
 ## Tiempo real
