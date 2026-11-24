@@ -31,6 +31,12 @@ export class SupabaseRepository {
     });
   }
 
+  async healthCheck() {
+    const { error } = await this.client.from("rooms").select("id").limit(1);
+    if (error) throw new Error(`No se pudo conectar con Supabase: ${error.message}`);
+    return true;
+  }
+
   async createRoom(room) {
     const { data, error } = await this.client.from("rooms").insert({
       code: room.code,
@@ -86,6 +92,13 @@ export class SupabaseRepository {
     }).select().single();
     if (error) throw error;
     return participantFromDatabase(data);
+  }
+
+  async findParticipantByTokenHash(code, tokenHash) {
+    const { data, error } = await this.client.from("participants").select("*")
+      .eq("room_code", code).eq("token_hash", tokenHash).maybeSingle();
+    if (error) throw error;
+    return data ? participantFromDatabase(data) : null;
   }
 
   async removeParticipant(code, participantId) {

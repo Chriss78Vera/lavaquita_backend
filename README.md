@@ -1,39 +1,29 @@
 # La Vaquita Backend
 
-Backend sencillo para la aplicación móvil **La Vaquita**. Está hecho con Node.js, Express y Socket.IO; usa Supabase cuando se configuran sus credenciales y memoria local durante el desarrollo.
+API Node.js para salas, participantes, cuentas, juegos, OCR y comunicación en tiempo real.
 
-## Funcionalidades incluidas
+## Autores
 
-- Salas temporales sin registro, con código `XXXX-00`.
-- Participantes con nombre y avatar (máximo 10).
-- Token privado de anfitrión para modificar la cuenta e iniciar juegos.
-- Total manual o detectado mediante una IA de visión/OCR.
-- División exacta: los centavos sobrantes se reparten sin alterar el total.
-- Ruleta sin participantes repetidos.
-- Dados, empates y rondas de desempate.
-- QR generado por QuickChart; QuickChart solo dibuja la invitación.
-- Eventos sincronizados mediante Socket.IO.
-- Persistencia en Supabase con RLS cerrado al acceso público.
+- Christopher Vera
+- Jordan Paillacho
 
-## Inicio rápido
+## Iniciar
 
-Requiere Node.js 20 o posterior.
+Requiere Node.js 20 o superior.
 
-```bash
+```powershell
 npm install
-copy .env.example .env
+Copy-Item .env.example .env
 npm run dev
 ```
 
-Sin credenciales de Supabase la API funciona en memoria y los datos se borran al reiniciar. Comprueba el servicio en `GET http://localhost:3000/health`.
+Antes de iniciar:
 
-## Configurar Supabase
+1. Ejecuta `supabase/schema.sql` en Supabase.
+2. Completa `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en `.env`.
+3. Para OCR completa `OCR_API_URL`, `OCR_API_KEY` y `OCR_MODEL`.
 
-1. Crea un proyecto en Supabase.
-2. Abre el SQL Editor y ejecuta [`supabase/schema.sql`](supabase/schema.sql).
-3. Copia `.env.example` como `.env`.
-4. Define `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
-5. Nunca incluyas la service role en la aplicación MAUI ni la subas a Git.
+La clave debe ser `service_role` o `sb_secret_`, nunca `anon` o `sb_publishable_`.
 
 Las tablas no tienen políticas públicas. La app móvil habla con este backend, y únicamente el backend accede a Supabase.
 
@@ -105,18 +95,13 @@ Eventos que recibe el cliente:
 
 - `participant_joined`
 - `bill_updated`
+- `game_started`
 - `game_event`
 
 En producción con varias instancias del backend se debe agregar un adaptador compartido de Socket.IO (por ejemplo Redis) para que todas emitan los mismos eventos.
 
 ## Pruebas
 
-```bash
+```powershell
 npm test
 ```
-
-Las pruebas usan el repositorio en memoria y no necesitan Supabase ni claves externas.
-
-## Nota para Android e iOS
-
-En un emulador Android, `localhost` apunta al emulador; normalmente se usa `http://10.0.2.2:3000`. En iOS Simulator suele funcionar `http://localhost:3000`. Para dispositivos físicos utiliza una URL HTTPS accesible desde la red o despliega el backend.

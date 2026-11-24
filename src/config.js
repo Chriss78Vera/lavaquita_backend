@@ -5,6 +5,12 @@ const numberFromEnv = (name, fallback) => {
   return Number.isFinite(value) ? value : fallback;
 };
 
+const booleanFromEnv = (name, fallback = false) => {
+  const value = process.env[name];
+  if (value == null) return fallback;
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+};
+
 export const config = {
   port: numberFromEnv("PORT", 3000),
   nodeEnv: process.env.NODE_ENV ?? "development",
@@ -19,10 +25,25 @@ export const config = {
   ocrApiKey: process.env.OCR_API_KEY,
   ocrModel: process.env.OCR_MODEL,
   ocrMaxImageMb: numberFromEnv("OCR_MAX_IMAGE_MB", 8),
+  useMemoryRepository: booleanFromEnv("USE_MEMORY_REPOSITORY") || process.env.NODE_ENV === "test",
 };
 
+const supabaseKeyKind = (key) => {
+  if (!key) return "missing";
+  if (key.startsWith("sb_secret_")) return "secret";
+  if (key.startsWith("sb_publishable_")) return "publishable";
+  try {
+    const payload = JSON.parse(Buffer.from(key.split(".")[1], "base64url").toString("utf8"));
+    return payload.role ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+};
+
+export const configuredSupabaseKeyKind = supabaseKeyKind(config.supabaseServiceRoleKey);
 export const hasSupabaseConfig = Boolean(
   config.supabaseUrl?.match(/^https?:\/\/[^\s]+$/i)
-    && config.supabaseServiceRoleKey
-    && !config.supabaseServiceRoleKey.startsWith("sb_publishable_"),
+  && config.supabaseServiceRoleKey
+  && !config.supabaseUrl.includes("TU-PROYECTO")
+  && ["secret", "service_role"].includes(configuredSupabaseKeyKind),
 );

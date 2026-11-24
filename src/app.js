@@ -9,6 +9,7 @@ import { asyncHandler, ApiError } from "./utils/errors.js";
 
 const roomCode = (request) => request.params.code.toUpperCase();
 const hostToken = (request) => request.header("x-host-token");
+const participantToken = (request) => request.header("x-participant-token");
 
 const createRoomSchema = z.object({
   hostName: z.string().trim().min(1).max(30),
@@ -31,7 +32,7 @@ const validate = (schema, value) => {
   return result.data;
 };
 
-export const createApp = ({ roomService, ocrService, emit = () => {} }) => {
+export const createApp = ({ roomService, ocrService, emit = () => {}, persistence = "memory" }) => {
   const app = express();
   const upload = multer({
     storage: multer.memoryStorage(),
@@ -44,7 +45,11 @@ export const createApp = ({ roomService, ocrService, emit = () => {} }) => {
   app.use(express.json({ limit: "1mb" }));
   if (config.nodeEnv !== "test") app.use(morgan("dev"));
 
-  app.get("/health", (_request, response) => response.json({ ok: true, service: "lavaquita-backend" }));
+  app.get("/health", (_request, response) => response.json({
+    ok: true,
+    service: "lavaquita-backend",
+    persistence,
+  }));
 
   app.post("/api/rooms", asyncHandler(async (request, response) => {
     const result = await roomService.createRoom(validate(createRoomSchema, request.body));
@@ -69,6 +74,13 @@ export const createApp = ({ roomService, ocrService, emit = () => {} }) => {
     const result = await roomService.joinRoom(code, validate(joinRoomSchema, request.body));
     emit(code, "participant_joined", result.participant);
     response.status(201).json(result);
+  }));
+
+  app.delete("/api/rooms/:code/participants/me", asyncHandler(async (request, response) => {
+    const code = roomCode(request);
+    const participant = await roomService.leaveRoom(code, participantToken(request));
+    emit(code, "participant_left", participant);
+    response.status(204).end();
   }));
 
   app.patch("/api/rooms/:code/bill", asyncHandler(async (request, response) => {
@@ -106,6 +118,9 @@ export const createApp = ({ roomService, ocrService, emit = () => {} }) => {
   app.post("/api/rooms/:code/games/roulette", asyncHandler(async (request, response) => {
     const code = roomCode(request);
     const { payerCount } = validate(rouletteSchema, request.body);
+    await roomService.assertHost(code, hostToken(request));
+    emit(code, "game_started", { type: "roulette" });
+    await new Promise((resolve) => setTimeout(resolve, 1_800));
     const event = await roomService.roulette(code, hostToken(request), payerCount);
     emit(code, "game_event", event);
     response.status(201).json(event);
@@ -114,6 +129,9 @@ export const createApp = ({ roomService, ocrService, emit = () => {} }) => {
   app.post("/api/rooms/:code/games/dice", asyncHandler(async (request, response) => {
     const code = roomCode(request);
     const { participantIds } = validate(diceSchema, request.body);
+    await roomService.assertHost(code, hostToken(request));
+    emit(code, "game_started", { type: "dice" });
+    await new Promise((resolve) => setTimeout(resolve, 1_800));
     const event = await roomService.dice(code, hostToken(request), participantIds);
     emit(code, "game_event", event);
     response.status(201).json(event);

@@ -7,6 +7,10 @@ export class MemoryRepository {
     this.events = new Map();
   }
 
+  async healthCheck() {
+    return true;
+  }
+
   async createRoom(room) {
     const saved = { id: randomUUID(), ...room, createdAt: new Date().toISOString() };
     this.rooms.set(saved.code, saved);
@@ -45,6 +49,10 @@ export class MemoryRepository {
     participants.push(saved);
     this.participants.set(code, participants);
     return saved;
+  }
+
+  async findParticipantByTokenHash(code, tokenHash) {
+    return (this.participants.get(code) ?? []).find((item) => item.tokenHash === tokenHash) ?? null;
   }
 
   async removeParticipant(code, participantId) {
