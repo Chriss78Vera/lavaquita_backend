@@ -88,3 +88,18 @@ test("el anfitrión puede cerrar y eliminar una sala temporal", async () => {
     .set("x-host-token", second.body.hostToken).expect(204);
   await request(app).get(`/api/rooms/${second.body.room.code}`).expect(404);
 });
+
+test("un participante puede salir sin cerrar la sala", async () => {
+  const app = buildApp();
+  const created = await request(app).post("/api/rooms").send({ hostName: "Ana" }).expect(201);
+  const { code } = created.body.room;
+  const joined = await request(app).post(`/api/rooms/${code}/participants`)
+    .send({ name: "Mateo" }).expect(201);
+
+  await request(app).delete(`/api/rooms/${code}/participants/me`).expect(401);
+  await request(app).delete(`/api/rooms/${code}/participants/me`)
+    .set("x-participant-token", joined.body.participantToken).expect(204);
+
+  const room = await request(app).get(`/api/rooms/${code}`).expect(200);
+  assert.deepEqual(room.body.participants.map((item) => item.name), ["Ana"]);
+});

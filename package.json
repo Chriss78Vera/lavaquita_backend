@@ -26,6 +26,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "socket.io-client": "^4.8.1",
     "supertest": "^7.1.4"
   }
 }

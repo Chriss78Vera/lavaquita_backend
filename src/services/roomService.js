@@ -92,6 +92,17 @@ export class RoomService {
     return { participant: publicParticipant(participant), participantToken };
   }
 
+  async leaveRoom(code, token) {
+    await this.getRoom(code);
+    if (!token) throw new ApiError(401, "Token de participante requerido");
+    const participant = await this.repository.findParticipantByTokenHash(code, hashToken(token));
+    if (!participant) throw new ApiError(401, "Token de participante inválido");
+    if (participant.isHost) throw new ApiError(400, "El anfitrión debe finalizar la sala");
+    await this.repository.removeParticipant(code, participant.id);
+    this.invalidate(code);
+    return publicParticipant(participant);
+  }
+
   async assertHost(code, token) {
     const room = await this.repository.findRoom(code);
     if (!room) throw new ApiError(404, "La sala no existe o ya expiró");
