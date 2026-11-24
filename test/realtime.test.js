@@ -59,4 +59,17 @@ test("dos clientes reciben los cambios de su sala en tiempo real", async (contex
   assert.equal(hostGame.id, guestGame.id);
   assert.equal(guestGame.type, "split");
   assert.equal(guestGame.payload.shares.length, 2);
+
+  const hostStarted = new Promise((resolve) => hostClient.once("game_started", resolve));
+  const guestStarted = new Promise((resolve) => guestClient.once("game_started", resolve));
+  const hostDiceEvent = new Promise((resolve) => hostClient.once("game_event", resolve));
+  const guestDiceEvent = new Promise((resolve) => guestClient.once("game_event", resolve));
+  await request(app).post(`/api/rooms/${code}/games/dice`)
+    .set("x-host-token", created.body.hostToken).send({}).expect(201);
+  const [hostAnimation, guestAnimation, hostDice, guestDice] = await Promise.all([
+    hostStarted, guestStarted, hostDiceEvent, guestDiceEvent,
+  ]);
+  assert.equal(hostAnimation.type, "dice");
+  assert.equal(guestAnimation.type, "dice");
+  assert.equal(hostDice.id, guestDice.id);
 });

@@ -118,6 +118,9 @@ export const createApp = ({ roomService, ocrService, emit = () => {}, persistenc
   app.post("/api/rooms/:code/games/roulette", asyncHandler(async (request, response) => {
     const code = roomCode(request);
     const { payerCount } = validate(rouletteSchema, request.body);
+    await roomService.assertHost(code, hostToken(request));
+    emit(code, "game_started", { type: "roulette" });
+    await new Promise((resolve) => setTimeout(resolve, 1_800));
     const event = await roomService.roulette(code, hostToken(request), payerCount);
     emit(code, "game_event", event);
     response.status(201).json(event);
@@ -126,6 +129,9 @@ export const createApp = ({ roomService, ocrService, emit = () => {}, persistenc
   app.post("/api/rooms/:code/games/dice", asyncHandler(async (request, response) => {
     const code = roomCode(request);
     const { participantIds } = validate(diceSchema, request.body);
+    await roomService.assertHost(code, hostToken(request));
+    emit(code, "game_started", { type: "dice" });
+    await new Promise((resolve) => setTimeout(resolve, 1_800));
     const event = await roomService.dice(code, hostToken(request), participantIds);
     emit(code, "game_event", event);
     response.status(201).json(event);
