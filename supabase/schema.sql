@@ -7,7 +7,7 @@ create table if not exists public.rooms (
   host_avatar text not null default 'sparkles',
   host_token_hash text not null,
   amount_cents integer check (amount_cents > 0),
-  currency char(3) not null default 'COP',
+  currency char(3) not null default 'USD',
   status text not null default 'waiting' check (status in ('waiting', 'ready', 'playing', 'finished', 'closed')),
   expires_at timestamptz not null,
   created_at timestamptz not null default now(),

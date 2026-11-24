@@ -49,4 +49,7 @@ configureRealtime(io, roomService);
 server.listen(config.port, () => {
   console.log(`La Vaquita API escuchando en http://localhost:${config.port}`);
   console.log(`Persistencia: ${persistence}`);
+  if ((config.supabaseUrl || config.supabaseServiceRoleKey) && !hasSupabaseConfig) {
+    console.warn("Supabase requiere SUPABASE_SECRET_KEY (sb_secret_...) o la clave legacy service_role.");
+  }
 });

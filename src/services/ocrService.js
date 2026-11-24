@@ -18,12 +18,12 @@ export class OcrService {
   }
 
   get configured() {
-    return Boolean(this.apiUrl && this.model);
+    return Boolean(this.apiUrl && this.apiKey && this.model);
   }
 
   async readTotal(file) {
     if (!this.configured) {
-      throw new ApiError(503, "OCR no configurado; usa el ingreso manual o configura OCR_API_URL y OCR_MODEL");
+      throw new ApiError(503, "OCR no configurado; usa el ingreso manual o configura OCR_API_URL, OCR_API_KEY y OCR_MODEL");
     }
 
     const image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
@@ -39,7 +39,7 @@ export class OcrService {
         messages: [{
           role: "user",
           content: [
-            { type: "text", text: "Lee esta factura. Devuelve solamente JSON con total numérico, moneda ISO de 3 letras y confianza entre 0 y 1. Prefiere el total final después de impuestos. Ejemplo: {\"total\":84.60,\"currency\":\"USD\",\"confidence\":0.95}" },
+            { type: "text", text: "Lee esta factura. Devuelve solamente JSON con total numérico en dólares estadounidenses, currency siempre USD y confidence entre 0 y 1. Prefiere el total final después de impuestos. No conviertas monedas. Ejemplo: {\"total\":84.60,\"currency\":\"USD\",\"confidence\":0.95}" },
             { type: "image_url", image_url: { url: image } },
           ],
         }],
@@ -61,7 +61,7 @@ export class OcrService {
 
     return {
       total,
-      currency: String(parsed.currency ?? "COP").toUpperCase().slice(0, 3),
+      currency: "USD",
       confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0)),
     };
   }

@@ -7,7 +7,7 @@ import { RoomService } from "../src/services/roomService.js";
 
 const buildApp = () => createApp({
   roomService: new RoomService(new MemoryRepository()),
-  ocrService: { readTotal: async () => ({ total: 20, currency: "COP", confidence: 1 }) },
+  ocrService: { readTotal: async () => ({ total: 20, currency: "USD", confidence: 1 }) },
 });
 
 test("flujo principal: crear, unir, fijar cuenta y dividir", async () => {
@@ -15,10 +15,11 @@ test("flujo principal: crear, unir, fijar cuenta y dividir", async () => {
   const created = await request(app).post("/api/rooms").send({ hostName: "Ana" }).expect(201);
   const { code } = created.body.room;
   await request(app).post(`/api/rooms/${code}/participants`).send({ name: "Mateo" }).expect(201);
+  await request(app).post(`/api/rooms/${code}/participants`).send({ name: "Sofi" }).expect(201);
   await request(app).patch(`/api/rooms/${code}/bill`)
-    .set("x-host-token", created.body.hostToken).send({ amount: 10, currency: "COP" }).expect(200);
+    .set("x-host-token", created.body.hostToken).send({ amount: 10, currency: "USD" }).expect(200);
   const split = await request(app).get(`/api/rooms/${code}/split`).expect(200);
-  assert.equal(split.body.shares.length, 2);
+  assert.equal(split.body.shares.length, 3);
   assert.equal(split.body.shares.reduce((sum, share) => sum + share.amountCents, 0), 1000);
 });
 
@@ -66,6 +67,7 @@ test("la división iniciada por el anfitrión queda sincronizada como evento", a
   const { code } = created.body.room;
   const token = created.body.hostToken;
   await request(app).post(`/api/rooms/${code}/participants`).send({ name: "Mateo" }).expect(201);
+  await request(app).post(`/api/rooms/${code}/participants`).send({ name: "Sofi" }).expect(201);
   await request(app).patch(`/api/rooms/${code}/bill`).set("x-host-token", token).send({ amount: 10 }).expect(200);
   const event = await request(app).post(`/api/rooms/${code}/games/split`).set("x-host-token", token).send({}).expect(201);
   assert.equal(event.body.type, "split");
