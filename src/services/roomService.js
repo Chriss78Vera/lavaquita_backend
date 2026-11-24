@@ -126,7 +126,7 @@ export class RoomService {
   async split(code) {
     const room = await this.getRoom(code);
     if (!room.amountCents) throw new ApiError(409, "Primero confirma el total de la cuenta");
-    if (room.participants.length <= 2) throw new ApiError(409, "Para dividir la cuenta necesitas al menos 3 jugadores");
+    if (room.participants.length < 2) throw new ApiError(409, "Para dividir la cuenta necesitas al menos 2 participantes");
     const shares = splitCents(room.amountCents, room.participants);
     return { total: room.amount, currency: room.currency, shares };
   }
@@ -146,6 +146,7 @@ export class RoomService {
     await this.assertHost(code, token);
     const room = await this.getRoom(code);
     if (!room.amountCents) throw new ApiError(409, "Primero confirma el total de la cuenta");
+    if (room.participants.length < 2) throw new ApiError(409, "Para jugar a la ruleta necesitas al menos 2 participantes");
     if (payerCount < 1 || payerCount >= room.participants.length) {
       throw new ApiError(400, `payerCount debe estar entre 1 y ${room.participants.length - 1}`);
     }

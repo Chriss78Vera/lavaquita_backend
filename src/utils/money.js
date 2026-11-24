@@ -11,8 +11,8 @@ export const toCents = (amount) => {
 export const fromCents = (cents) => Number((cents / 100).toFixed(2));
 
 export const splitCents = (totalCents, participants) => {
-  if (!Array.isArray(participants) || participants.length < 2) {
-    throw new ApiError(400, "Se necesitan al menos dos participantes");
+  if (!Array.isArray(participants) || participants.length < 1) {
+    throw new ApiError(400, "Se necesita al menos un participante para asignar el monto");
   }
 
   const base = Math.floor(totalCents / participants.length);

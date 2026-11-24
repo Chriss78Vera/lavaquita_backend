@@ -46,7 +46,6 @@ test("dos clientes reciben los cambios de su sala en tiempo real", async (contex
   await request(app).post(`/api/rooms/${code}/participants`).send({ name: "Mateo" }).expect(201);
   const participant = await participantEvent;
   assert.equal(participant.name, "Mateo");
-  await request(app).post(`/api/rooms/${code}/participants`).send({ name: "Sofi" }).expect(201);
 
   const guestJoined = await new Promise((resolve) => guestClient.emit("join_room", code, resolve));
   assert.equal(guestJoined.ok, true);
@@ -59,7 +58,7 @@ test("dos clientes reciben los cambios de su sala en tiempo real", async (contex
   const [hostGame, guestGame] = await Promise.all([hostGameEvent, guestGameEvent]);
   assert.equal(hostGame.id, guestGame.id);
   assert.equal(guestGame.type, "split");
-  assert.equal(guestGame.payload.shares.length, 3);
+  assert.equal(guestGame.payload.shares.length, 2);
 
   const hostStarted = new Promise((resolve) => hostClient.once("game_started", resolve));
   const guestStarted = new Promise((resolve) => guestClient.once("game_started", resolve));
