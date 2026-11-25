@@ -21,33 +21,38 @@ Antes de iniciar:
 
 1. Ejecuta `supabase/schema.sql` en Supabase.
 2. Completa `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en `.env`.
-3. Para OCR completa `OCR_API_URL`, `OCR_API_KEY` y `OCR_MODEL`.
+3. Para OCR local, inicia Ollama con los comandos de la sección siguiente.
 
 La clave debe ser `service_role` o `sb_secret_`, nunca `anon` o `sb_publishable_`.
 
 Las tablas no tienen políticas públicas. La app móvil habla con este backend, y únicamente el backend accede a Supabase.
 
-## Configurar OCR
+## OCR local con Ollama
 
-El adaptador acepta una API de visión compatible con el endpoint `chat/completions` de OpenAI. Configura:
+Desde `lavaquita_backend` y con Docker Desktop iniciado:
 
-```env
-OCR_API_URL=https://api.tu-proveedor.com/v1/chat/completions
-OCR_API_KEY=tu_clave
-OCR_MODEL=tu_modelo_con_vision
+```powershell
+docker compose up -d ollama
+docker compose exec ollama ollama pull qwen2.5vl:3b
 ```
 
-La imagen se procesa en memoria y no se guarda. Una opción recomendada es DeepSeek Vision, sin instalar una IA local:
+La descarga del modelo se hace una vez. Docker guarda el modelo en un volumen. Configura estas variables en el `.env` del backend:
 
 ```env
-OCR_API_URL=https://api.deepseek.com/chat/completions
-OCR_API_KEY=tu_clave_deepseek
-OCR_MODEL=deepseek-flash
+OCR_API_URL=http://127.0.0.1:11435/v1/chat/completions
+OCR_API_KEY=
+OCR_MODEL=qwen2.5vl:3b
 ```
 
-Si la IA aún no está configurada, el endpoint devuelve `503` y la app debe mantener disponible el monto manual. No pongas la API key en la aplicación MAUI ni la subas a Git; debe permanecer únicamente en el backend.
+Inicia el backend con `npm run dev`. Node.js se ejecuta en el host y envía la imagen a Ollama mediante HTTP. El puerto 11435 está disponible únicamente en el equipo anfitrión. La primera lectura puede tardar más porque el modelo debe cargarse en memoria.
 
-Si tu IA usa otro formato, solo hay que adaptar [`src/services/ocrService.js`](src/services/ocrService.js); el contrato hacia MAUI no cambia.
+Para probar con una factura de ejemplo:
+
+```powershell
+curl.exe -F "image=@factura.png" http://localhost:3000/api/ocr/total
+```
+
+El backend procesa la imagen en memoria y devuelve un total sugerido para revisión. Si Ollama no está disponible, se puede ingresar el monto manualmente. Para usar otro proveedor compatible con `chat/completions`, cambia la URL, el modelo y la clave si el proveedor la requiere.
 
 ## API principal
 
