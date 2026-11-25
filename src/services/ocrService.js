@@ -18,12 +18,12 @@ export class OcrService {
   }
 
   get configured() {
-    return Boolean(this.apiUrl && this.apiKey && this.model);
+    return Boolean(this.apiUrl && this.model);
   }
 
   async readTotal(file) {
     if (!this.configured) {
-      throw new ApiError(503, "OCR no configurado; usa el ingreso manual o configura OCR_API_URL, OCR_API_KEY y OCR_MODEL");
+      throw new ApiError(503, "OCR no configurado. Usa el ingreso manual o configura OCR_API_URL y OCR_MODEL.");
     }
 
     const image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
@@ -36,6 +36,7 @@ export class OcrService {
       body: JSON.stringify({
         model: this.model,
         temperature: 0,
+        max_tokens: 100,
         messages: [{
           role: "user",
           content: [
@@ -44,17 +45,28 @@ export class OcrService {
           ],
         }],
       }),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(90_000),
+    }).catch((error) => {
+      if (error.name === "TimeoutError") {
+        throw new ApiError(504, "La lectura de la factura tardó demasiado. Puedes ingresar el total manualmente.");
+      }
+      throw new ApiError(503, "El servicio de OCR no está disponible. Puedes ingresar el total manualmente.");
     });
 
     if (!response.ok) {
       throw new ApiError(502, "La IA de OCR no pudo procesar la imagen");
     }
 
-    const data = await response.json();
+    const data = await response.json().catch((error) => {
+      if (error.name === "AbortError" || error.name === "TimeoutError") {
+        throw new ApiError(504, "La lectura de la factura tardó demasiado. Puedes ingresar el total manualmente.");
+      }
+      throw new ApiError(502, "El servicio de OCR devolvió una respuesta inválida.");
+    });
     const content = data.choices?.[0]?.message?.content;
     const parsed = typeof content === "string" ? findJson(content) : content;
-    const total = Number(parsed?.total);
+    const rawTotal = parsed?.total;
+    const total = typeof rawTotal === "string" ? Number(rawTotal) : rawTotal;
     if (!Number.isFinite(total) || total <= 0) {
       throw new ApiError(422, "No se pudo detectar un total confiable; ingrésalo manualmente");
     }
