@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { ApiError } from "../utils/errors.js";
 
 const findJson = (value) => {
@@ -26,7 +27,16 @@ export class OcrService {
       throw new ApiError(503, "OCR no configurado. Usa el ingreso manual o configura OCR_API_URL y OCR_MODEL.");
     }
 
-    const image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+    const prepared = await sharp(file.buffer, { limitInputPixels: 50_000_000 })
+      .autoOrient()
+      .resize(1000, 1000, { fit: "inside", withoutEnlargement: true })
+      .flatten({ background: "#ffffff" })
+      .jpeg({ quality: 86 })
+      .toBuffer()
+      .catch(() => {
+        throw new ApiError(422, "No se pudo abrir la imagen. Envía una foto JPG o PNG, o ingresa el monto manualmente.");
+      });
+    const image = `data:image/jpeg;base64,${prepared.toString("base64")}`;
     const response = await fetch(this.apiUrl, {
       method: "POST",
       headers: {
