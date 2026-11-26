@@ -9,7 +9,7 @@ API Node.js para salas, participantes, cuentas, juegos, OCR y comunicación en t
 
 ## Iniciar
 
-Requiere Node.js 20 o superior.
+Requiere Node.js 20.9 o superior.
 
 ```powershell
 npm install
@@ -52,7 +52,7 @@ Para probar con una factura de ejemplo:
 curl.exe -F "image=@factura.png" http://localhost:3000/api/ocr/total
 ```
 
-El backend procesa la imagen en memoria y devuelve un total sugerido para revisión. Si Ollama no está disponible, se puede ingresar el monto manualmente. Para usar otro proveedor compatible con `chat/completions`, cambia la URL, el modelo y la clave si el proveedor la requiere.
+El backend corrige la orientación indicada por los metadatos de la foto y reduce su resolución en memoria antes de enviarla a Ollama. El modelo devuelve un total sugerido para revisión. Si Ollama no está disponible, se puede ingresar el monto manualmente. Para usar otro proveedor compatible con `chat/completions`, cambia la URL, el modelo y la clave si el proveedor la requiere.
 
 ## API principal
 

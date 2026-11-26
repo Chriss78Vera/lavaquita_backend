@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { createServer } from "node:http";
 import test from "node:test";
+import sharp from "sharp";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { OcrService } from "../src/services/ocrService.js";
@@ -24,7 +25,9 @@ test("el OCR envía la imagen a Ollama sin clave y conserva el contrato móvil",
     model: "qwen2.5vl:3b",
   });
   const app = createApp({ ocrService });
-  const image = Buffer.from("test-image");
+  const image = await sharp({
+    create: { width: 1200, height: 1600, channels: 3, background: "white" },
+  }).png().toBuffer();
 
   try {
     const result = await request(app).post("/api/ocr/total")
@@ -33,7 +36,11 @@ test("el OCR envía la imagen a Ollama sin clave y conserva el contrato móvil",
     assert.equal(received.url, "/v1/chat/completions");
     assert.equal(received.auth, undefined);
     assert.equal(received.body.model, "qwen2.5vl:3b");
-    assert.equal(received.body.messages[0].content[1].image_url.url, `data:image/png;base64,${image.toString("base64")}`);
+    const dataUrl = received.body.messages[0].content[1].image_url.url;
+    assert.match(dataUrl, /^data:image\/jpeg;base64,/);
+    const converted = Buffer.from(dataUrl.split(",")[1], "base64");
+    const { width, height } = await sharp(converted).metadata();
+    assert.deepEqual({ width, height }, { width: 750, height: 1000 });
   } finally {
     await new Promise((resolve) => provider.close(resolve));
   }
